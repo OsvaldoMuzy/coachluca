@@ -14,6 +14,15 @@ import ResultStep from './components/ResultStep';
 import BackRedirectStep from './components/BackRedirectStep';
 import { QUIZ_STEPS, ASSETS } from './data/quizData';
 
+import {
+  trackQuizStart,
+  trackQuizStep,
+  trackSummaryView,
+  trackAnalyzingStep,
+  trackCouponUnlocked,
+  trackOfferPage
+} from './utils/pixel';
+
 import ScrollIndicator from './components/ScrollIndicator';
 
 const STORAGE_ANSWERS_KEY = 'pgb_quiz_answers';
@@ -303,14 +312,18 @@ export default function App() {
       // Ignore
     }
 
-    // Custom step change event
+    // Fire Custom Pixel Event
     window.dispatchEvent(new CustomEvent('quiz_step_change', {
-      detail: { 
-        slug: currentSlug, 
+      detail: {
+        slug: currentSlug,
         stepNumber: getStepNumber(),
-        answers 
+        answers
       }
     }));
+
+    if (isFinished) {
+      trackOfferPage();
+    }
 
     // Scroll to top on step transition
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -476,6 +489,7 @@ export default function App() {
   };
 
   const handleStartQuiz = () => {
+    trackQuizStart();
     // Reset answers so new quiz runs clean without pre-selected answers from previous sessions
     setAnswers({});
     try {
@@ -495,7 +509,10 @@ export default function App() {
     const newAnswers = { ...answers, [stepData.id]: value };
     setAnswers(newAnswers);
 
+    trackQuizStep(currentStepIndex + 1, totalSteps, stepData, value);
+
     if (currentStepIndex >= totalSteps - 1) {
+      trackSummaryView(newAnswers);
       setTimeout(() => {
         navigateToSlug('perfil-analizado');
         isNavigating.current = false;
@@ -536,6 +553,7 @@ export default function App() {
   };
 
   const handleSummaryContinue = () => {
+    trackAnalyzingStep();
     navigateToSlug('analizando-ia');
   };
 
@@ -544,6 +562,7 @@ export default function App() {
   };
 
   const handleVSLContinue = () => {
+    trackCouponUnlocked();
     navigateToSlug('beca-descuento');
   };
 
